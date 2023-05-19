@@ -16,8 +16,8 @@ minimal: false             # use a dark header
 # Menu
 
 navigation:                # accepts {file, title, url, icon, sidebaricon}
-  - {title: "About Me", file: "Blog.md"}
-  - {file: "CV", title: "CV", icon: home}
+  - {title: "Blog", file: "Blog.md"}
+  - {file: "CV", title: "CV"}
   - {title: "Labs", url: "link"}
 
 external:                  # shows a footer with social links - for available icons see fontawesome.com/icons
