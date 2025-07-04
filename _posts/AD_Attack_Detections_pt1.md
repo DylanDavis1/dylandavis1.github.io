@@ -540,7 +540,9 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     **Detection Query:**
     
-    `event.code:"4662" and (not message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" or user.name !: "*$")`
+    ```elasticsearch
+event.code:"4662" AND (NOT message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" OR user.name NOT LIKE "*$")
+    ```
     
     **Rule Description:** This alert is the result of an event log id 4662 DCSync directory replication that doesn’t come from a machine account name, OR has a GUID in the properties not equal to `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`
     
