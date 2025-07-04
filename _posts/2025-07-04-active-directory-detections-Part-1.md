@@ -512,7 +512,6 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     ![image 18](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2017.png)
     
-    We can build another alert for this.
     
 2. **Volume Shadow Copy Service (VSS)**
     
@@ -621,7 +620,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 We dumped LSASS with Mimikatz using 
 
 ```c
-sekurlsa::logonPasswords full`
+sekurlsa::logonPasswords full
 ```
 
 - Got the hash of the DC: `217e50203a5aba59cefa863c724bf61b`
@@ -631,7 +630,7 @@ sekurlsa::logonPasswords full`
 - To perform the PTH attack, we ran the command
   
     ```c
-    sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
+    sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b
     ```
 
   
