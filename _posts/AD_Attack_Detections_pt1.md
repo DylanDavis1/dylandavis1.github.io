@@ -93,7 +93,7 @@ Additional Information:
 
 ---
 
-### 💡 Detection Rule
+### Detection Rule
 
 - **Rule Name:** Kerbrute Password Spray
 - **Query:**
@@ -152,7 +152,7 @@ Additional Information:
 ```
 ---
 
-### 💡 Detection Rule
+### Detection Rule
 
 - **Rule Name:** AS-REP Roasting - GetNPUsers
 - **Query:**
@@ -164,16 +164,65 @@ winlog.event_id: "4768"
 ```
 ---
 
-### 💡 Detection Rule (Honeypot User)
+## Detecting Anomalous TGT Requests
 
-If the attacker bypasses tool-based detection by modifying the impacket source code, a honeypot user detection can still catch the attempt.
+Attackers often use tools like Impacket's `getTGT` to request a Ticket Granting Ticket (TGT) that can later be used for Pass-The-Ticket (PTT) attacks. These requests generate anomalous Kerberos logs, making them useful for detection.
 
-- **Rule Name:** AS-REP Roasting - Honeypot Account
+**Tool:** [Impacket - getTGT](https://github.com/fortra/impacket)
+
+**Command:**
+```bash
+impacket-getTGT testlab.local/bob:'bP@ssw0rd'
+```
+
+When using `getTGT`, the TGT request produces an `Event ID 4768` log. While this looks like a normal TGT request, certain fields raise red flags:
+
+- `Ticket Options`: `0x50800000` — unusual for standard TGT requests.
+- `Ticket Encryption Type`: `0x12` — standard, but paired with the above option is suspicious.
+- `Pre-Authentication Type`: `2` — indicates pre-auth was used, typical for interactive login but not enough to normalize the request.
+
+---
+
+**Example Log — Event ID 4768**
+
+```
+A Kerberos authentication ticket (TGT) was requested.
+
+Account Information:
+    Account Name:		    bob
+    Supplied Realm Name:	TESTLAB.LOCAL
+    User ID:			    TESTLAB\bob
+
+Service Information:
+    Service Name:		    krbtgt
+    Service ID:		    TESTLAB\krbtgt
+
+Network Information:
+    Client Address:		    ::ffff:192.168.108.129
+    Client Port:		    56732
+
+Additional Information:
+    Ticket Options:		    0x50800000
+    Result Code:		    0x0
+    Ticket Encryption Type:	0x12
+    Pre-Authentication Type:	2
+...
+```
+
+---
+
+### Detection Rule
+
+- **Rule Name:** Impacket TGT Request
 - **Query:**
 ```elasticsearch
-winlog.event_id: "4768" AND user.name: "alice"
+winlog.event_id: "4768" AND
+winlog.event_data.TicketOptions: "0x50800000" AND
+winlog.event_data.TicketEncryptionType: "0x12" AND
+winlog.event_data.PreAuthType: "2"
 ```
 
-- **Description:** Detects TGT requests for a decoy (honeypot) user account that should never be accessed. If triggered, this is a strong indicator of AS-REP Roasting activity.
+- **Description:** This log is the result of Impacket requesting a TGT, most likely with impacket-GetTGT. This allows attackers to request TGTs likely to be used with Pass-The-Ticket (PTT) attacks.
 ```
+
 
