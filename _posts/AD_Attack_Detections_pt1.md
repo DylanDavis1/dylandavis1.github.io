@@ -21,6 +21,7 @@ This is part one of a multi-part detection engineering blog series that covers a
   - [Netexec](#detecting-dcsync-with-netexec)
 - [Detecting Pass-The-Hash](#detecting-pass-the-hash)
 
+---
 
 ## Detecting Password Spraying
 Unlike brute force attacks, password spraying involves trying a small number of commonly used passwords against multiple user accounts. We chose Kerbrute as the tool for this attack because it generates distinct event logs that we can use to detect the activity.
@@ -100,6 +101,7 @@ winlog.event_data.TicketOptions: "0x10" AND winlog.event_id: "4768"
 
 - **Description:** Flags Kerberos TGT requests with an abnormal `TicketOptions` value of `0x10`, which is commonly seen during password spraying with Kerbrute.
   
+---
 
 ## Detecting AS-REP Roasting
 
@@ -155,6 +157,8 @@ winlog.event_data.TicketEncryptionType: "0x17" AND
 winlog.event_data.PreAuthType: "0" AND
 winlog.event_id: "4768"
 ```
+
+---
 
 ## Detecting Anomalous TGT Requests
 
@@ -214,6 +218,7 @@ winlog.event_data.PreAuthType: "2"
 
 - **Description:** This log is the result of Impacket requesting a TGT, most likely with impacket-GetTGT. This allows attackers to request TGTs likely to be used with Pass-The-Ticket (PTT) attacks.
 
+---
 
 ## Detecting Kerberoasting
 
@@ -314,6 +319,7 @@ winlog.event_data.TicketEncryptionType: "0x17"
 
 - **Description:** Detects service ticket requests using RC4 encryption which is typically seen when using `GetUserSPNs` or `getST` to perform Kerberoasting.
 
+---
 
 ## Detecting Kerberoasting Without Pre-Authentication
 
@@ -369,6 +375,7 @@ NOT service.name: "krbtgt"
 
 - **Description:** Detects Kerberoasting performed against a user with pre-authentication disabled. The presence of a non-krbtgt SPN and PreAuthType `0` indicates this unusual ticket request without valid credentials.
 
+---
 
 ## Detecting DCSync Attacks
 
@@ -584,6 +591,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 
    * Detects shadow copy creation via `VSSVC.exe`
 
+---
 
 ## Detecting Pass-The-Hash
 
