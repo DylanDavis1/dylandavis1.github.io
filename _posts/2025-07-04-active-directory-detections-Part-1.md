@@ -31,6 +31,7 @@ This post was made by myself and my good friend [Eric Esquivel](https://ericesqu
   - [Netexec](#detecting-dcsync-with-netexec)
 - [Detecting Pass-The-Hash](#detecting-pass-the-hash)
 
+
 ---
 
 ## Detecting Password Spraying
@@ -110,6 +111,7 @@ winlog.event_data.TicketOptions: "0x10" AND winlog.event_id: "4768"
 ```
 
 - **Description:** Flags Kerberos TGT requests with an abnormal `TicketOptions` value of `0x10`, which is commonly seen during password spraying with Kerbrute.
+
   
 ---
 
@@ -167,6 +169,7 @@ winlog.event_data.TicketEncryptionType: "0x17" AND
 winlog.event_data.PreAuthType: "0" AND
 winlog.event_id: "4768"
 ```
+
 
 ---
 
@@ -227,6 +230,7 @@ winlog.event_data.PreAuthType: "2"
 ```
 
 - **Description:** This log is the result of Impacket requesting a TGT, most likely with impacket-GetTGT. This allows attackers to request TGTs likely to be used with Pass-The-Ticket (PTT) attacks.
+
 
 ---
 
@@ -329,6 +333,7 @@ winlog.event_data.TicketEncryptionType: "0x17"
 
 - **Description:** Detects service ticket requests using RC4 encryption which is typically seen when using `GetUserSPNs` or `getST` to perform Kerberoasting.
 
+
 ---
 
 ## Detecting Kerberoasting Without Pre-Authentication
@@ -384,6 +389,7 @@ NOT service.name: "krbtgt"
 ```
 
 - **Description:** Detects Kerberoasting performed against a user with pre-authentication disabled. The presence of a non-krbtgt SPN and PreAuthType `0` indicates this unusual ticket request without valid credentials.
+
 
 ---
 
@@ -576,6 +582,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
    cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\* 1> \Windows\Temp\* 2>&1
    ```
 
+
 4. **Rule Name:** Netexec Ntds VSS Option - Command Line Detection
 
    **Detection Query:**
@@ -591,6 +598,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
    C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*.tmp 
    ```
 
+
 5. **Rule Name:** Netexec Ntds VSS Option - Event Log Detection
 
    **Detection Query:**
@@ -601,9 +609,8 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 
    **Rule Description:** This is another alert as a result of Netexec’s VSS option to perform a DCSync attack by looking for generated event logs ID `4904` and `4905` with process executable name of `C:\Windows\System32\VSSVC.exe`
 
-   * Detects shadow copy creation via `VSSVC.exe`
-
 ---
+
 
 ## Detecting Pass-The-Hash
 
