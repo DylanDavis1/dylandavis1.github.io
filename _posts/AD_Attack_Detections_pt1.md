@@ -405,10 +405,36 @@ mimikatz.exe "lsadump::dcsync /user:krbtgt" exit
 
 When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs instead of the usual one that is associated with a typical sync between domain controllers. These logs differ in both the **Account Name** and the **GUIDs** used:
 
-* **Normal behavior**: One `4662` log from a DC's machine account.
+* **Normal behavior**: One `4662` log from each DC (Notice it’s only 1 log for each DC, and the account name is the domain controller machine account, and note the GUIDs in the properties field.)
 - insert normal dcsync picture
   
-* **Mimikatz DCSync**: Four `4662` logs from a **user account** (e.g., a domain admin).
+* **Mimikatz DCSync**: Four `4662` logs from a **user account** with the action “An operation was performed on an object”.
 - insert mimikatz dcsync picture
 
-  
+### 1. **Account Name**
+
+If we were a Domain Administrator user when we run a DCSync attack, we can see the **Account Name** would be anomalous because it’s supposed to be a Domain Controller machine account performing a sync, not a user account.  
+Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
+- insert picture
+
+### 2. **GUIDs**
+
+Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
+Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
+`1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ **DS-Replication-Get-Changes**
+- insert pic
+- insert pic
+
+Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is **DS-Replication-Get-Changes-In-Filtered-Set.**
+- insert pic
+
+Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
+- insert pic
+
+### **Bonus Notes**
+
+When performing a DCSync attack from outside of a domain controller, packets will be sent over the **DCERPC**, **EPM**, and **DRSUAPI** protocols.
+
+![DCSync network traffic](/imgs/dcsync/dcsync-network-packets.png)
+
+**However**, if you execute a DCSync attack while on a domain controller, it will perform everything locally with the domain controller and **no packets** with the protocols mentioned above will be sent.
