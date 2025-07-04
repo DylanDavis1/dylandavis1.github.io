@@ -1,4 +1,37 @@
 <head>
+<style>
+  body {
+    background-color: {{ site.page-col }};
+    color: {{ site.text-col }};
+  }
+
+  a {
+    color: {{ site.link-col }};
+  }
+
+  a:hover {
+    color: {{ site.hover-col }};
+  }
+
+  nav.navbar, .navbar {
+    background-color: {{ site.navbar-col }};
+    color: {{ site.navbar-text-col }};
+  }
+
+  footer {
+    background-color: {{ site.footer-col }};
+    color: {{ site.footer-text-col }};
+  }
+
+  footer a {
+    color: {{ site.footer-link-col }};
+  }
+
+  footer a:hover {
+    color: {{ site.footer-hover-col }};
+  }
+</style>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
