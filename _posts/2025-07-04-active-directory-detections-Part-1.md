@@ -14,6 +14,8 @@ This post dives into key indicators of compromise (IoCs) associated with common 
 
 This is part one of a multi-part detection engineering blog series that covers a range of common and advanced attacks targeting Active Directory environments.
 
+This post was made by myself and my good friend [Eric Esquivel](https://ericesquivel.github.io/). Go check his blog out, he does a lot of cool stuff.
+
 > **Note:** Prior knowledge of these attacks is recommended to fully understand the detection logic presented.
 
 
