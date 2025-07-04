@@ -331,6 +331,84 @@ winlog.event_data.TicketEncryptionType: "0x17"
 
 ---
 
+## Detecting Kerberoasting Without Pre-Authentication
 
+This is just like AS-REP roasting, except attackers are able to use the user that does not require pre-authentication to request service tickets to other SPNs by simply changing the target SPN from krbtgt to another SPN. This allows for kerberoasting without credentials. The resulting generated log looks like an AS-REP Roasting generated log except the “Service Name” will not be krbtgt.
 
+**Tool:** [Impacket - GetUserSPNs (no-preauth)](https://github.com/fortra/impacket)
 
+**Command:**
+```bash
+impacket-GetUserSPNs -no-preauth "alice" -usersfile usernames -dc-host 192.168.108.139 testlab.local/
+```
+
+The resulting log resembles AS-REP Roasting, but with one major difference: the **Service Name is _not_ `krbtgt`** — meaning the request was made for an SPN and not a TGT. This allowed us to craft a targeted detection.
+
+---
+
+**Example Log — Event ID 4768**
+
+```
+A Kerberos authentication ticket (TGT) was requested.
+
+Account Information:
+    Account Name:		    alice
+    Supplied Realm Name:	    TESTLAB.LOCAL
+    User ID:			    TESTLAB\alice
+
+Service Information:
+    Service Name:		    bob
+    Service ID:		    TESTLAB\bob
+
+Network Information:
+    Client Address:		    ::ffff:192.168.108.129
+    Client Port:		    47502
+
+Additional Information:
+    Ticket Options:		    0x50800000
+    Result Code:		    0x0
+    Ticket Encryption Type:	0x17
+    Pre-Authentication Type:	0
+...
+```
+
+---
+
+### Detection Rule
+
+- **Rule Name:** Kerberoasting Without Pre-Authentication
+- **Query:**
+```elasticsearch
+winlog.event_id: "4768" AND
+winlog.event_data.TicketOptions: "0x50800000" AND
+winlog.event_data.PreAuthType: "0" AND
+NOT service.name: "krbtgt"
+```
+
+- **Description:** Detects Kerberoasting performed against a user with pre-authentication disabled. The presence of a non-krbtgt SPN and PreAuthType `0` indicates this unusual ticket request without valid credentials.
+
+---
+
+## Detecting DCSync Attacks
+
+DCSync is a powerful technique which is used to replicate a domain controllers behavior and extract credentials from Active Directory. Both [Mimikatz](https://github.com/gentilkiwi/mimikatz) and [Netexec](https://github.com/Pennyw0rth/NetExec) support this attack.
+
+### Detecting Mimikatz's DCSync
+
+**Tool:** Mimikatz[Mimikatz](https://github.com/gentilkiwi/mimikatz)
+
+**Command:**
+
+```bash
+mimikatz.exe "lsadump::dcsync /user:krbtgt" exit
+````
+
+When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs instead of the usual one that is associated with a typical sync between domain controllers. These logs differ in both the **Account Name** and the **GUIDs** used:
+
+* **Normal behavior**: One `4662` log from a DC's machine account.
+- insert normal dcsync picture
+  
+* **Mimikatz DCSync**: Four `4662` logs from a **user account** (e.g., a domain admin).
+- insert mimikatz dcsync picture
+
+  
