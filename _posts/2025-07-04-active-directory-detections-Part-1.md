@@ -10,9 +10,9 @@ tags: [active-directory, detection engineering, threat-hunting, blue-team]
 
 Active Directory plays a huge role in managing user identities and access across enterprise networks, making it a prime target for attackers looking to compromise a network.
 
-This post dives into key indicators of compromise (IoCs) associated with common Active Directory attacks and popular offensive tools like Impacket and Netexec. Whether you're on the offensive or defensive side, this blog is designed to provide practical insight. Red teamers can use it to better understand how their attacks appear in logs, while defenders can apply these detections to improve detections.
+This post dives into key indicators of compromise (IoCs) associated with common Active Directory attacks and popular offensive tools like Impacket and Netexec. Whether you're on the offensive or defensive side, this blog is designed to provide practical insight. Red teamers can use this to see how their attacks show up in logs, while defenders can use it to strengthen their detections.
 
-This is part one of a multi-part detection engineering blog series that covers a range of common and advanced attacks targeting Active Directory environments.
+This is part one of a multi-part detection engineering blog series that I plan on doing, which covers a range of common and advanced attacks targeting Active Directory environments.
 
 This post was made by myself and my good friend [Eric Esquivel](https://ericesquivel.github.io/). Go check his blog out, he does a lot of cool stuff.
 
