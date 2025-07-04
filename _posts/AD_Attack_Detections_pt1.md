@@ -446,7 +446,7 @@ When performing a DCSync attack from outside of a domain controller, packets wil
 
 Netexec supports DCSync via three techniques:
 1. **Drsuapi to sync a single user**
-2. ``** abuse (LOLBIN)**
+2. **ntdsutil.exe**
 3. **Volume Shadow Copy Service (VSS)**
 
 #### 1. Drsuapi to Sync a Single User
@@ -471,3 +471,93 @@ Netexec can perform a DCSync by using the LOLBIN (living off the land binary) nt
 ```bash
 nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil
 ```
+- insert pic
+- insert pic
+
+This is the chain of events when running the -M ntdsutil command. To detect this we can look for process creation with event id `1` and the process.command_line as any of the below.
+```bash
+cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q" 1> \Windows\Temp\QuGPmj 2>&1
+powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q"
+"C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\172963876" q q
+cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\172963876 1> \Windows\Temp\vofITR 2>&1
+```
+
+The first command executes the second which executes the third. The third created a directory called `172963876` in `C:\Windows\Temp` and standard out was sent to a random file called `vofITR` with the following content below.
+- insert pic
+
+This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the `172963876` directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
+- insert pic
+
+After the command is finished running, we will have the .tmp file and the new file with no file-extension remaining. Both of these will have no contents in them.
+- insert pic
+
+Lastly, there will be lots of event id `4799` logs generated on the domain controller with the process executable of either `C:\Windows\System32\ntdsutil.exe` or `C:\Windows\System32\VSSVC.exe`.
+- insert pic
+
+#### 3. Volume Shadow Copy Service (VSS)
+Lastly Netexec has an option to dump ntds.dit with the volume shadow copy service (VSS) using the following command:
+```bash
+nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss
+```
+- insert pic
+
+Running this command will generate 2 logs. One event id `4904` and one `4905`. The process executable will be `C:\Windows\System32\VSSVC.exe`.
+- insert pic
+- insert pic
+
+Netexec will run this command on the box:
+```bash
+C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
+```
+Then it will also run this command to copy the the shadow copy to `C:\Windows\Temp`
+```bash
+C:\Windows\system32\cmd.exe  /C copy \?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\yDBdCgmM.tmp 
+```
+We can build a command line detection with the process command lines shown above and event code `1`
+- insert pic
+
+### Detection Rules
+
+#### Rule: Single User DCSync - Mimikatz or Netexec
+
+```elasticsearch
+event.code:"4662" and (not message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" or user.name !: "*$")
+```
+
+- Flags replication activity from non-machine accounts or GUID mismatch.
+
+#### Rule: Netexec Ntdsutil Module - Anomalous Event Logs
+
+```elasticsearch
+event.code:"4799" and (winlog.event_data.CallerProcessName:"C:\Windows\System32\ntdsutil.exe" or winlog.event_data.CallerProcessName:"C:\Windows\System32\VSSVC.exe")
+)
+```
+
+- Flags high-volume replication actions by LOLBINs.
+
+#### Rule: Netexec Ntdsutil Module - Command Line Detection
+
+```elasticsearch
+event.code:"1" and ((message:"*cmd.exe /Q /c powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*" and message:" q q\" 1> \Windows\Temp\*" and message:"*2>&1*") or (message:"*powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*" and message:"*' q q\"*") or (message:"*\"C:\Windows\system32\ntdsutil.exe\" \"ac i ntds\" ifm \"create full C:\Windows\Temp\*" and message:"*\"q q") or (message:"*cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\*" and "*1> \Windows\Temp\*" and "*2>&1*"))
+)
+```
+
+- Flags use of `ntdsutil.exe` and its cleanup commands.
+
+#### Rule: Netexec VSS Option - Command Line Detection
+
+```elasticsearch
+event.code:"1" and (message:"*C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C:*" or message:"*vssadmin list shadows /for=C:*" or message:"*C:\Windows\system32\vssvc.exe*" or (message:"*C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*" and message:"*C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat*") or message:"*C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*")
+```
+
+- Flags shadow copy abuse via VSS.
+
+#### Rule: Netexec VSS Option - Event Log Detection
+
+```elasticsearch
+(event.code:4904 OR event.code:4905) AND process.executable:"C:\\Windows\\System32\\VSSVC.exe"
+```
+
+- Detects shadow copy creation via `VSSVC.exe`
+
+---
