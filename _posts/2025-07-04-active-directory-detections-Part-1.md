@@ -1,3 +1,11 @@
+---
+layout: post
+title: "Active Directory Attack Detections Part 1"
+date: 2025-07-04
+categories: detections ad attacks
+tags: [active-directory, detection engineering, threat-hunting, blue-team]
+---
+
 ## Introduction
 
 Active Directory plays a huge role in managing user identities and access across enterprise networks, making it a prime target for attackers looking to compromise a network.
