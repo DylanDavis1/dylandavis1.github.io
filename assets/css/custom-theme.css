@@ -41,3 +41,9 @@ footer a:hover {
 .post-preview:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+img {
+  border: 2px solid black;
+  border-radius: 6px; /* optional: adds slight rounding */
+  padding: 2px;       /* optional: space between image and border */
+}
