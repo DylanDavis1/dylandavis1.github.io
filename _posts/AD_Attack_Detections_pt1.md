@@ -411,11 +411,15 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
 * **Mimikatz DCSync**: Four `4662` logs from a **user account** with the action “An operation was performed on an object”.
 - insert mimikatz dcsync picture
 
+---
+
 ### 1. **Account Name**
 
 If we were a Domain Administrator user when we run a DCSync attack, we can see the **Account Name** would be anomalous because it’s supposed to be a Domain Controller machine account performing a sync, not a user account.  
 Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
 - insert picture
+
+---
 
 ### 2. **GUIDs**
 
@@ -430,6 +434,8 @@ Log 3 will look very different, however. It will not have a GUID beginning with 
 
 Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
 - insert pic
+
+---
 
 ### **Bonus Notes**
 
