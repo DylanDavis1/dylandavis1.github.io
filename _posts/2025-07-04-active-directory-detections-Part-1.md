@@ -567,7 +567,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
    ```
 
    **Rule Description:** This alert is the result of detected event logs that align with Netexec’s ntdsutil module to perform a DCSync attack by looking for event id 4799 with the process executable name of C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe
-
+<br>
 3. **Rule Name:** Netexec Ntdsutil DCSync Module - Command Line Detection
 
    **Detection Query:**
@@ -601,7 +601,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
    C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*.tmp 
    ```
 
-
+<br>
 5. **Rule Name:** Netexec Ntds VSS Option - Event Log Detection
 
    **Detection Query:**
