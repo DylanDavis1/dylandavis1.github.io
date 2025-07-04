@@ -392,14 +392,14 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
   
 * **Mimikatz DCSync**: Four `4662` logs from a **user account** with the action “An operation was performed on an object”.
   
-![image 2](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%202.png)
+![image 2](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%201.png)
 
 1. **Account Name**
 
   If we were a Domain Administrator user when we run a DCSync attack, we can see the **Account Name** would be anomalous   because it’s supposed to be a Domain Controller machine account performing a sync, not a user account.  
   Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
   
-![image 3](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%203.png)
+![image 3](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%202.png)
 
 2. **GUIDs**
 
@@ -407,22 +407,22 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
   Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
   `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ **DS-Replication-Get-Changes**
   
-![image 4](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%204.png)
-![image 5](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%205.png)
+![image 4](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%203.png)
+![image 5](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%204.png)
 
   Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is **DS-Replication-Get-Changes-In-Filtered-Set.**
 
-![image 6](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%206.png)
+![image 6](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%205.png)
 
   Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
   
-![image 7](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%207.png)
+![image 7](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%206.png)
 
 **Bonus Notes**
 
 When performing a DCSync attack from outside of a domain controller, packets will be sent over the **DCERPC**, **EPM**, and **DRSUAPI** protocols.
 
-![image 8](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%208.png)
+![image 8](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%207.png)
 
 **However**, if you execute a DCSync attack while on a domain controller, it will perform everything locally with the domain controller and **no packets** with the protocols mentioned above will be sent.
 
@@ -436,17 +436,17 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     `nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt`
     
-    ![image 9](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%209.png)
+    ![image 9](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%208.png)
     
     When using netexec to dump a specific user, it was generate 3 event id 4662 logs. The first 2 will have a normal GUID of `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`, which is *DS-Replication-Get-Changes*.
     
-    ![image 10](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2010.png)
+    ![image 10](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%209.png)
     
-    ![image 11](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2011.png)
+    ![image 11](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2010.png)
     
     However the third generated log will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is *DS-Replication-Get-Changes-All*.
     
-    ![image 12](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2012.png)
+    ![image 12](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2011.png)
     
     Again we can look for non domain controller machine accounts too, just like the Mimikatz detection.
     
@@ -456,9 +456,9 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     `nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil`
     
-    ![image 13](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2013.png)
+    ![image 13](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2012.png)
     
-    ![image 14](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2014.png)
+    ![image 14](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2013.png)
     
     This is the chain of events when running when running the -M ntdsutil command. To detect this we can look for process creation with event id 1 and the process.command_line as any of the below.
     
@@ -471,19 +471,19 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     The first command executes the second which executes the third. The third created a directory called ‘172963876’ in C:\Windows\Temp and standard out was sent to a random file called vofITR with the following content below.
     
-    ![image 15](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2015.png)
+    ![image 15](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2014.png)
     
     This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the ‘172963876’ directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
     
-    ![image 16](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2016.png)
+    ![image 16](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2015.png)
     
     After the command is finished running, we will have the .tmp file and the new file with no extensions remaining. Both of these will have no contents in them.
     
-    ![image 17](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2017.png)
+    ![image 17](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2016.png)
     
     Lastly, there will be lots of event id 4799 logs generated on the domain controller. (182 from my testing to be exact) with the process executable of either C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe.
     
-    ![image 18](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2018.png)
+    ![image 18](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2017.png)
     
     We can build another alert for this.
     
@@ -493,13 +493,13 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     `nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss`
     
-    ![image 19](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2019.png)
+    ![image 19](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2018.png)
     
     Running this command will generate 2 logs. One event id `4904` and one `4905`. The process executable will be `C:\Windows\System32\VSSVC.exe`.
     
-    ![image 20](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2020.png)
+    ![image 20](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2019.png)
     
-    ![image 21](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2021.png)
+    ![image 21](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2020.png)
     
     Netexec will run this command on the box:
     
@@ -515,7 +515,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     We can build a command line detection with the process command lines shown above and event code 1
     
-    ![image 22](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2022.png)
+    ![image 22](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2021.png)
     
 
 **Final DCSync detections:**
@@ -591,7 +591,7 @@ We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
 
 - Got the hash of the DC: `217e50203a5aba59cefa863c724bf61b`
     
-    ![image 23](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2023.png)
+    ![image 23](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2022.png)
     
 - To perform the PTH attack, we ran the command
     
@@ -599,13 +599,13 @@ We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
     
 - We then were able to get a root shell on the Domain Controller authenticating as the Administrator account, as shown by the command prompt `whoami /user` command.
     
-    ![image 24](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2024.png)
+    ![image 24](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2023.png)
     
 - **Event ID 4624 (Successful Account Logon)**
     - **Logon Type: 9 (NewCredentials)**: This logon type shows that credentials were used to create a new session without re-authenticating. Mimikatz abuses this type to inject credentials into a session, allowing attackers to impersonate other users or escalate privileges.
     - **Logon GUID: All zeros**: The absence of a valid GUID indicates that this logon was network-based and not linked to a direct interactive session. This is typical of **pass-the-hash** or **pass-the-ticket** techniques, where an attacker uses stolen credentials without the original logon process.
         
-        ![image 25](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2025.png)
+        ![image 25](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2024.png)
         
 - **Event ID 4624 (Successful Account Logon)**:
     - This event confirms that a logon occurred successfully, with the **SYSTEM** account being used, as seen from the **Security ID** and **Account Name**.
@@ -616,7 +616,7 @@ We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
 
 By correlating **Event ID 4624** and **Event ID 4672** using the shared **Logon ID** (**0x169AB5D**), it is clear that the logon session gained special privileges. This suggests that the **Pass-the-Hash** attack was successful, where the we used the NTLM hash of a privileged account to gain access and escalate privileges, as evidenced by the special privileges being assigned
 
-![image 26](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2026.png)
+![image 26](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2025.png)
 
 This **Sysmon Event ID 1** log shows the **cmd.exe** process running **Mimikatz** with **SYSTEM-level privileges**:
 
@@ -625,7 +625,7 @@ This **Sysmon Event ID 1** log shows the **cmd.exe** process running **Mimikatz*
 - **Logon ID (0x169AB5D)**: This links to the previous session where credentials were stolen using Mimikatz.
 - **Parent Process**: **Mimikatz.exe**, indicating manual execution of the tool.
     
-    ![image 27](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2027.png)
+    ![image 27](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2026.png)
     
 
 1. PowerShell Execution
@@ -660,6 +660,6 @@ Potential Pass-The-Hash /  Credential Abuse
 
 This flags events where a privileged account logs in over a network and is immediately granted elevated rights, which can indicate credential abuse or attack.
 
+![image 28](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2027.png)
+
 ![image 28](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2028.png)
-
-
