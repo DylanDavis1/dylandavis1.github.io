@@ -599,3 +599,84 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
    **Rule Description:** This is another alert as a result of Netexec’s VSS option to perform a DCSync attack by looking for generated event logs ID `4904` and `4905` with process executable name of `C:\Windows\System32\VSSVC.exe`
 
    * Detects shadow copy creation via `VSSVC.exe`
+
+---
+
+## Detecting Pass-The-Hash
+
+We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
+
+- Got the hash of the DC: `217e50203a5aba59cefa863c724bf61b`
+    
+    ![image.png](image%2022.png)
+    
+- To perform the PTH attack, we ran the command
+    
+    `sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
+    
+- We then were able to get a root shell on the Domain Controller authenticating as the Administrator account, as shown by the command prompt `whoami /user` command.
+    
+    ![image.png](image%2023.png)
+    
+- **Event ID 4624 (Successful Account Logon)**
+    - **Logon Type: 9 (NewCredentials)**: This logon type shows that credentials were used to create a new session without re-authenticating. Mimikatz abuses this type to inject credentials into a session, allowing attackers to impersonate other users or escalate privileges.
+    - **Logon GUID: All zeros**: The absence of a valid GUID indicates that this logon was network-based and not linked to a direct interactive session. This is typical of **pass-the-hash** or **pass-the-ticket** techniques, where an attacker uses stolen credentials without the original logon process.
+        
+        ![image.png](image%2024.png)
+        
+- **Event ID 4624 (Successful Account Logon)**:
+    - This event confirms that a logon occurred successfully, with the **SYSTEM** account being used, as seen from the **Security ID** and **Account Name**.
+    - The **Logon ID** of **0x169AB5D** identifies this specific logon session. This is a key to track because it links all actions associated with this logon.
+- **Event ID 4672 (Special Privileges Assigned to New Logon)**:
+    - This event occurs when special privileges, such as **SeTcbPrivilege** or **SeDebugPrivilege**, are assigned during the logon process. These privileges are typical for high-level accounts like **SYSTEM** or **Administrator**.
+    - The **Logon ID** is **0x169AB5D**, matching the logon ID from Event 4624. This direct correlation indicates that the same logon session (likely using a hash) was granted elevated privileges.
+
+By correlating **Event ID 4624** and **Event ID 4672** using the shared **Logon ID** (**0x169AB5D**), it is clear that the logon session gained special privileges. This suggests that the **Pass-the-Hash** attack was successful, where the we used the NTLM hash of a privileged account to gain access and escalate privileges, as evidenced by the special privileges being assigned
+
+![image.png](image%2025.png)
+
+This **Sysmon Event ID 1** log shows the **cmd.exe** process running **Mimikatz** with **SYSTEM-level privileges**:
+
+- **Process**: **cmd.exe** was used, spawned by **Mimikatz.exe** from the user's Downloads folder.
+- **User**: The process ran under **NT AUTHORITY\SYSTEM**, confirming elevated privileges.
+- **Logon ID (0x169AB5D)**: This links to the previous session where credentials were stolen using Mimikatz.
+- **Parent Process**: **Mimikatz.exe**, indicating manual execution of the tool.
+    
+    ![image.png](image%2026.png)
+    
+
+1. PowerShell Execution
+
+- **PowerShell.exe** was executed under the **Administrator** account.
+
+**2. Mimikatz Execution**
+
+- **Mimikatz.exe** was initiated directly after PowerShell, which is an indicator for credential dumping. The 4-minute execution window indicates the “attacker” was extracting credentials from memory.
+
+**3. Command Prompt Execution (cmd.exe)**
+
+- Following Mimikatz, **cmd.exe** ran under the **SYSTEM** account, signaling privilege escalation.
+
+**4. conhost.exe Termination**
+
+- **conhost.exe** termination marks the close end of the **SYSTEM** session.
+
+**Detection Query:**
+
+```
+winlog.event_id: ("4624" and "4672") and winlog.event_data.LogonProcessName: "seclogo"
+```
+
+**Rule Description:**
+
+Potential Pass-The-Hash /  Credential Abuse
+
+- **Event ID 4624**: Successful logon.
+- **Event ID 4672**: Special privileges assigned to the logged-in user.
+- **LogonProcessName: "seclogo"**: Indicates the logon used **NTLM** for network-based authentication.
+
+This flags events where a privileged account logs in over a network and is immediately granted elevated rights, which can indicate credential abuse or attack.
+
+![image.png](image%2027.png)
+
+![image.png](image%2028.png)
