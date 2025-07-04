@@ -387,7 +387,7 @@ mimikatz.exe "lsadump::dcsync /user:krbtgt" exit
 When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs instead of the usual one that is associated with a typical sync between domain controllers. These logs differ in both the **Account Name** and the **GUIDs** used:
 
 * **Normal behavior**: One `4662` log from each DC (Notice it’s only 1 log for each DC, and the account name is the domain controller machine account, and note the GUIDs in the properties field.)
-- insert normal dcsync picture
+![image 1](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%201.png)
   
 * **Mimikatz DCSync**: Four `4662` logs from a **user account** with the action “An operation was performed on an object”.
 - insert mimikatz dcsync picture
