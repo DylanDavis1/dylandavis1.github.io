@@ -508,7 +508,9 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     Lastly Netexec has an option to dump ntds.dit with the volume shadow copy service (VSS) using the following command:
     
-    `nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss`
+    ```c
+   nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss`
+    ```
     
     ![image 19](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2018.png)
     
@@ -605,8 +607,10 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 
 ## Detecting Pass-The-Hash
 
-We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
-
+We dumped LSASS with Mimikatz using 
+```c
+sekurlsa::logonPasswords full`
+```
 - Got the hash of the DC: `217e50203a5aba59cefa863c724bf61b`
     
     ![image 23](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2022.png)
