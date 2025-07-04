@@ -441,3 +441,33 @@ When performing a DCSync attack from outside of a domain controller, packets wil
 ![DCSync network traffic](/imgs/dcsync/dcsync-network-packets.png)
 
 **However**, if you execute a DCSync attack while on a domain controller, it will perform everything locally with the domain controller and **no packets** with the protocols mentioned above will be sent.
+
+### Detecting Netexec’s DCSync
+
+Netexec supports DCSync via three techniques:
+1. **Drsuapi to sync a single user**
+2. ``** abuse (LOLBIN)**
+3. **Volume Shadow Copy Service (VSS)**
+
+#### 1. Drsuapi to Sync a Single User
+
+The command to DCSync a single user with Netexec over the Drsuapi protocol is:
+```bash
+nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt
+```
+- insert picture
+
+When using netexec to dump a specific user, it was generating 3 event id 4662 logs. The first 2 will have a normal GUID of `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`, which is **DS-Replication-Get-Changes**.
+- insert pic
+- insert pic
+
+However, the third generated log will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
+- insert pic
+Again we can look for non domain controller machine accounts too, just like the Mimikatz detection.
+
+#### 2. ntdsutil.exe
+
+Netexec can perform a DCSync by using the LOLBIN (living off the land binary) ntdsutil.exe. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
+```bash
+nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil
+```
