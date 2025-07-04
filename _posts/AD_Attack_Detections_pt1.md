@@ -413,28 +413,28 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
 
 ---
 
-### 1. **Account Name**
+1. **Account Name**
 
-If we were a Domain Administrator user when we run a DCSync attack, we can see the **Account Name** would be anomalous because it’s supposed to be a Domain Controller machine account performing a sync, not a user account.  
-Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
+  If we were a Domain Administrator user when we run a DCSync attack, we can see the **Account Name** would be anomalous   because it’s supposed to be a Domain Controller machine account performing a sync, not a user account.  
+  Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
 - insert picture
 
-### 2. **GUIDs**
+2. **GUIDs**
 
-Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
-Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
-`1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ **DS-Replication-Get-Changes**
+  Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
+  Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
+  `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ **DS-Replication-Get-Changes**
 - insert pic
 - insert pic
 
-Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is **DS-Replication-Get-Changes-In-Filtered-Set.**
+  Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is **DS-Replication-Get-Changes-In-Filtered-Set.**
 - insert pic
 
-Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
+  Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
 - insert pic
 
 
-### **Bonus Notes**
+**Bonus Notes**
 
 When performing a DCSync attack from outside of a domain controller, packets will be sent over the **DCERPC**, **EPM**, and **DRSUAPI** protocols.
 
@@ -442,121 +442,151 @@ When performing a DCSync attack from outside of a domain controller, packets wil
 
 **However**, if you execute a DCSync attack while on a domain controller, it will perform everything locally with the domain controller and **no packets** with the protocols mentioned above will be sent.
 
-### Detecting Netexec’s DCSync
+### **Detecting Netexec’s DCSync**
 
-Netexec supports DCSync via three techniques:
+There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to sync a single user, 2. ntdsutil.exe 3. vss.
+
 1. **Drsuapi to sync a single user**
+    
+    The command to DCSync a single user with Netexec over the Drsuapu protocol is:
+    
+    `nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt`
+    
+    ![image.png](image%208.png)
+    
+    When using netexec to dump a specific user, it was generate 3 event id 4662 logs. The first 2 will have a normal GUID of `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`, which is *DS-Replication-Get-Changes*.
+    
+    ![image.png](image%209.png)
+    
+    ![image.png](image%2010.png)
+    
+    However the third generated log will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is *DS-Replication-Get-Changes-All*.
+    
+    ![image.png](image%2011.png)
+    
+    Again we can look for non domain controller machine accounts too, just like the Mimikatz detection.
+    
 2. **ntdsutil.exe**
+    
+    Netexec can perform a DCSync by using the LOLBIN (living off the land binary) ntdsutil.exe. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
+    
+    `nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil`
+    
+    ![image.png](image%2012.png)
+    
+    ![image.png](image%2013.png)
+    
+    This is the chain of events when running when running the -M ntdsutil command. To detect this we can look for process creation with event id 1 and the process.command_line as any of the below.
+    
+    ```c
+    cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q" 1> \Windows\Temp\QuGPmj 2>&1
+    powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q"
+    "C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\172963876" q q
+    cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\172963876 1> \Windows\Temp\vofITR 2>&1
+    ```
+    
+    The first command executes the second which executes the third. The third created a directory called ‘172963876’ in C:\Windows\Temp and standard out was sent to a random file called vofITR with the following content below.
+    
+    ![image.png](image%2014.png)
+    
+    This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the ‘172963876’ directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
+    
+    ![image.png](image%2015.png)
+    
+    After the command is finished running, we will have the .tmp file and the new file with no extensions remaining. Both of these will have no contents in them.
+    
+    ![image.png](image%2016.png)
+    
+    Lastly, there will be lots of event id 4799 logs generated on the domain controller. (182 from my testing to be exact) with the process executable of either C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe.
+    
+    ![image.png](image%2017.png)
+    
+    We can build another alert for this.
+    
 3. **Volume Shadow Copy Service (VSS)**
+    
+    Lastly Netexec has an option to dump ntds.dit with the volume shadow copy service (VSS) using the following command:
+    
+    `nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss`
+    
+    ![image.png](image%2018.png)
+    
+    Running this command will generate 2 logs. One event id `4904` and one `4905`. The process executable will be `C:\Windows\System32\VSSVC.exe`.
+    
+    ![image.png](image%2019.png)
+    
+    ![image.png](image%2020.png)
+    
+    Netexec will run this command on the box:
+    
+    ```c
+    C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
+    ```
+    
+    Then it will also run this command to copy the the shadow copy to C:\Windows\Temp
+    
+    ```c
+    C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\yDBdCgmM.tmp 
+    ```
+    
+    We can build a command line detection with the process command lines shown above and event code 1
+    
+    ![image.png](image%2021.png)
+    
 
-#### 1. Drsuapi to Sync a Single User
+**Final DCSync detections:**
 
-The command to DCSync a single user with Netexec over the Drsuapi protocol is:
-```bash
-nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt
-```
-- insert picture
-
-When using netexec to dump a specific user, it was generating 3 event id 4662 logs. The first 2 will have a normal GUID of `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`, which is **DS-Replication-Get-Changes**.
-- insert pic
-- insert pic
-
-However, the third generated log will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
-- insert pic
-Again we can look for non domain controller machine accounts too, just like the Mimikatz detection.
-
-#### 2. ntdsutil.exe
-
-Netexec can perform a DCSync by using the LOLBIN (living off the land binary) ntdsutil.exe. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
-```bash
-nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil
-```
-- insert pic
-- insert pic
-
-This is the chain of events when running the -M ntdsutil command. To detect this we can look for process creation with event id `1` and the process.command_line as any of the below.
-```bash
-cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q" 1> \Windows\Temp\QuGPmj 2>&1
-powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\172963876' q q"
-"C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\172963876" q q
-cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\172963876 1> \Windows\Temp\vofITR 2>&1
-```
-
-The first command executes the second which executes the third. The third created a directory called `172963876` in `C:\Windows\Temp` and standard out was sent to a random file called `vofITR` with the following content below.
-- insert pic
-
-This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the `172963876` directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
-- insert pic
-
-After the command is finished running, we will have the .tmp file and the new file with no file-extension remaining. Both of these will have no contents in them.
-- insert pic
-
-Lastly, there will be lots of event id `4799` logs generated on the domain controller with the process executable of either `C:\Windows\System32\ntdsutil.exe` or `C:\Windows\System32\VSSVC.exe`.
-- insert pic
-
-#### 3. Volume Shadow Copy Service (VSS)
-Lastly Netexec has an option to dump ntds.dit with the volume shadow copy service (VSS) using the following command:
-```bash
-nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss
-```
-- insert pic
-
-Running this command will generate 2 logs. One event id `4904` and one `4905`. The process executable will be `C:\Windows\System32\VSSVC.exe`.
-- insert pic
-- insert pic
-
-Netexec will run this command on the box:
-```bash
-C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
-```
-Then it will also run this command to copy the the shadow copy to `C:\Windows\Temp`
-```bash
-C:\Windows\system32\cmd.exe  /C copy \?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\yDBdCgmM.tmp 
-```
-We can build a command line detection with the process command lines shown above and event code `1`
-- insert pic
-
-### Detection Rules
-
-#### Rule: Single User DCSync - Mimikatz or Netexec
-
-```elasticsearch
-event.code:"4662" and (not message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" or user.name !: "*$")
-```
-
-- Flags replication activity from non-machine accounts or GUID mismatch.
-
-#### Rule: Netexec Ntdsutil Module - Anomalous Event Logs
-
-```elasticsearch
-event.code:"4799" and (winlog.event_data.CallerProcessName:"C:\Windows\System32\ntdsutil.exe" or winlog.event_data.CallerProcessName:"C:\Windows\System32\VSSVC.exe")
-)
-```
-
-- Flags high-volume replication actions by LOLBINs.
-
-#### Rule: Netexec Ntdsutil Module - Command Line Detection
-
-```elasticsearch
-event.code:"1" and ((message:"*cmd.exe /Q /c powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*" and message:" q q\" 1> \Windows\Temp\*" and message:"*2>&1*") or (message:"*powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*" and message:"*' q q\"*") or (message:"*\"C:\Windows\system32\ntdsutil.exe\" \"ac i ntds\" ifm \"create full C:\Windows\Temp\*" and message:"*\"q q") or (message:"*cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\*" and "*1> \Windows\Temp\*" and "*2>&1*"))
-)
-```
-
-- Flags use of `ntdsutil.exe` and its cleanup commands.
-
-#### Rule: Netexec VSS Option - Command Line Detection
-
-```elasticsearch
-event.code:"1" and (message:"*C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C:*" or message:"*vssadmin list shadows /for=C:*" or message:"*C:\Windows\system32\vssvc.exe*" or (message:"*C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*" and message:"*C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat*") or message:"*C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat*" or message:"*C:\Windows\system32\cmd.exe /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*")
-```
-
-- Flags shadow copy abuse via VSS.
-
-#### Rule: Netexec VSS Option - Event Log Detection
-
-```elasticsearch
-(event.code:4904 OR event.code:4905) AND process.executable:"C:\\Windows\\System32\\VSSVC.exe"
-```
+1. **Rule Name:** Single User DCSync - Mimikatz or Netexec
+    
+    **Detection Query:**
+    
+    `event.code:"4662" and (not message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" or user.name !: "*$")`
+    
+    **Rule Description:** This alert is the result of an event log id 4662 DCSync directory replication that doesn’t come from a machine account name, OR has a GUID in the properties not equal to `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`
+    
+2. **Rule Name:** Netexec Ntdsutil DCSync Module - Anomalous Event Logs
+    
+    **Detection Query:**
+    
+    `event.code:"4799" and (winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\ntdsutil.exe" or winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\VSSVC.exe")`
+    
+    **Rule Description:** This alert is the result of detected event logs that align with Netexec’s ntdsutil module to perform a DCSync attack by looking for event id 4799 with the process executable name of C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe
+    
+3. **Rule Name:** Netexec Ntdsutil DCSync Module - Command Line Detection
+    
+    **Detection Query:**
+    
+    `event.code:"1" and ((message:"*cmd.exe /Q /c powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:" q q\" 1> \\Windows\\Temp\\*" and message:"*2>&1*") or (message:"*powershell  \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:"*' q q\"*") or (message:"*\"C:\\Windows\\system32\\ntdsutil.exe\" \"ac i ntds\" ifm \"create full C:\\Windows\\Temp\\*" and message:"*\"q q") or (message:"*cmd.exe /Q /c rmdir /s /q C:\\Windows\\Temp\\*" and "*1> \\Windows\\Temp\\*" and "*2>&1*"))`
+    
+    **Rule Description:** This is another alert as a result of Netexec’s ntdsutil module to perform a DCSync attack by looking for process creation with event id 1 and the process.command_line as any of the below:
+    
+    ```c
+    cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q" 1> \Windows\Temp\* 2>&1
+    powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q"
+    "C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\*" q q
+    cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\* 1> \Windows\Temp\* 2>&1
+    ```
+    
+4. **Rule Name:** Netexec Ntds VSS Option - Command Line Detection
+    
+    **Detection Query:**
+    
+    `event.code:"1" and (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C: ^> C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C:*" or message:"*vssadmin  list shadows /for=C:*" or message:"*C:\\Windows\\system32\\vssvc.exe*" or (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*" and message:"*C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*") or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*")`
+    
+    **Rule Description:** This alert is the result of Netexec’s VSS option to perform a DCSync attack by looking for process creation with event id 1 and the process.command_line as any of the below:
+    
+    ```c
+    C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
+    C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*.tmp 
+    ```
+    
+5. **Rule Name:** Netexec Ntds VSS Option - Event Log Detection
+    
+    **Detection Query:**
+    
+    `(event.code: 4904 OR event.code: 4905) AND process.executable: "C:\\Windows\\System32\\VSSVC.exe"`
+    
+    **Rule Description:** This is another alert as a result of Netexec’s VSS option to perform a DCSync attack by looking for generated event logs ID `4904` and `4905` with process executable name of `C:\Windows\System32\VSSVC.exe`
 
 - Detects shadow copy creation via `VSSVC.exe`
 
