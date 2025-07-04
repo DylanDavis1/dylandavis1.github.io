@@ -28,14 +28,16 @@ footer a {
 footer a:hover {
   color: {{ site.footer-hover-col }};
 }
+
+/* Light theme post previews */
 .post-preview {
-  background-color: #2f2f2f;
+  background-color: #ffffff;  /* <-- switch from dark to white */
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);  /* softer shadow */
 }
 
 .post-preview:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
