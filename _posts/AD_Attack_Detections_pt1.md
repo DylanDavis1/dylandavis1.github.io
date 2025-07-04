@@ -103,4 +103,77 @@ winlog.event_data.TicketOptions: "0x10" AND winlog.event_id: "4768"
 ```
 
 - **Description:** Flags Kerberos TGT requests with an abnormal `TicketOptions` value of `0x10`, which is commonly seen during password spraying with Kerbrute.
+  
+---
+
+## Detecting AS-REP Roasting
+
+AS-REP Roasting is a well-known technique that targets accounts not requiring Kerberos pre-authentication. With no need to supply credentials, an attacker can request an encrypted TGT and attempt to crack it offline
+
+**Tool:** [Impacket - GetNPUsers](https://github.com/fortra/impacket)
+
+**Command:**
+```bash
+impacket-GetNPUsers -no-pass -usersfile npusers.txt testlab.local/
 ```
+
+When executed, the following characteristics are observed in the resulting Kerberos TGT request (`Event ID 4768`):
+
+- `Ticket Encryption Type`: `0x17` (RC4), which is uncommon in modern environments.
+- `Ticket Options`: `0x50800000`, not normally seen in legitimate requests.
+- `Pre-Authentication Type`: `0`, indicating no pre-authentication was required.
+
+---
+
+**Example Log — Event ID 4768**
+
+```
+A Kerberos authentication ticket (TGT) was requested.
+
+Account Information:
+    Account Name:		alice
+    Supplied Realm Name:	TESTLAB.LOCAL
+    User ID:			    TESTLAB\alice
+
+Service Information:
+    Service Name:		krbtgt
+    Service ID:		    TESTLAB\krbtgt
+
+Network Information:
+    Client Address:		::ffff:192.168.108.129
+    Client Port:		    44884
+
+Additional Information:
+    Ticket Options:		    0x50800000
+    Result Code:		    0x0
+    Ticket Encryption Type:	0x17
+    Pre-Authentication Type:	0
+...
+```
+---
+
+### 💡 Detection Rule
+
+- **Rule Name:** AS-REP Roasting - GetNPUsers
+- **Query:**
+```elasticsearch
+winlog.event_data.TicketOptions: "0x50800000" AND
+winlog.event_data.TicketEncryptionType: "0x17" AND
+winlog.event_data.PreAuthType: "0" AND
+winlog.event_id: "4768"
+```
+---
+
+### 💡 Detection Rule (Honeypot User)
+
+If the attacker bypasses tool-based detection by modifying the impacket source code, a honeypot user detection can still catch the attempt.
+
+- **Rule Name:** AS-REP Roasting - Honeypot Account
+- **Query:**
+```elasticsearch
+winlog.event_id: "4768" AND user.name: "alice"
+```
+
+- **Description:** Detects TGT requests for a decoy (honeypot) user account that should never be accessed. If triggered, this is a strong indicator of AS-REP Roasting activity.
+```
+
