@@ -8,6 +8,8 @@
 ############################
 # --- Required options --- #
 ############################
+site-css:
+  - /assets/css/custom-theme.css
 
 title: Dylan's Blog
 author: Dylan Davis
