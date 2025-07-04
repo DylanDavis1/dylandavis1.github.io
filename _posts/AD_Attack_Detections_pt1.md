@@ -537,59 +537,65 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 **Final DCSync detections:**
 
 1. **Rule Name:** Single User DCSync - Mimikatz or Netexec
-    
-    **Detection Query:**
-    
-    ```elasticsearch
-event.code:"4662" AND (NOT message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" OR user.name NOT LIKE "*$")
-    ```
-    
-    **Rule Description:** This alert is the result of an event log id 4662 DCSync directory replication that doesn’t come from a machine account name, OR has a GUID in the properties not equal to `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`
-    
+
+   **Detection Query:**
+
+   ```elasticsearch
+   event.code:"4662" AND (NOT message:"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*" OR user.name NOT LIKE "*$")
+   ```
+
+   **Rule Description:** This alert is the result of an event log id 4662 DCSync directory replication that doesn’t come from a machine account name, OR has a GUID in the properties not equal to `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`
+
 2. **Rule Name:** Netexec Ntdsutil DCSync Module - Anomalous Event Logs
-    
-    **Detection Query:**
-    
-    `event.code:"4799" and (winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\ntdsutil.exe" or winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\VSSVC.exe")`
-    
-    **Rule Description:** This alert is the result of detected event logs that align with Netexec’s ntdsutil module to perform a DCSync attack by looking for event id 4799 with the process executable name of C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe
-    
+
+   **Detection Query:**
+
+   ```elasticsearch
+   event.code:"4799" and (winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\ntdsutil.exe" or winlog.event_data.CallerProcessName:"C:\\Windows\\System32\\VSSVC.exe")
+   ```
+
+   **Rule Description:** This alert is the result of detected event logs that align with Netexec’s ntdsutil module to perform a DCSync attack by looking for event id 4799 with the process executable name of C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe
+
 3. **Rule Name:** Netexec Ntdsutil DCSync Module - Command Line Detection
-    
-    **Detection Query:**
-    
-    `event.code:"1" and ((message:"*cmd.exe /Q /c powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:" q q\" 1> \\Windows\\Temp\\*" and message:"*2>&1*") or (message:"*powershell  \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:"*' q q\"*") or (message:"*\"C:\\Windows\\system32\\ntdsutil.exe\" \"ac i ntds\" ifm \"create full C:\\Windows\\Temp\\*" and message:"*\"q q") or (message:"*cmd.exe /Q /c rmdir /s /q C:\\Windows\\Temp\\*" and "*1> \\Windows\\Temp\\*" and "*2>&1*"))`
-    
-    **Rule Description:** This is another alert as a result of Netexec’s ntdsutil module to perform a DCSync attack by looking for process creation with event id 1 and the process.command_line as any of the below:
-    
-    ```c
-    cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q" 1> \Windows\Temp\* 2>&1
-    powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q"
-    "C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\*" q q
-    cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\* 1> \Windows\Temp\* 2>&1
-    ```
-    
+
+   **Detection Query:**
+
+   ```elasticsearch
+   event.code:"1" and ((message:"*cmd.exe /Q /c powershell \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:" q q\" 1> \\Windows\\Temp\\*" and message:"*2>&1*") or (message:"*powershell  \"ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\\Windows\\Temp\\*" and message:"*' q q\"*") or (message:"*\\\"C:\\Windows\\system32\\ntdsutil.exe\\\" \\\"ac i ntds\\\" ifm \\\"create full C:\\Windows\\Temp\\*" and message:"*\\\"q q") or (message:"*cmd.exe /Q /c rmdir /s /q C:\\Windows\\Temp\\*" and "*1> \\Windows\\Temp\\*" and "*2>&1*"))
+   ```
+
+   **Rule Description:** This is another alert as a result of Netexec’s ntdsutil module to perform a DCSync attack by looking for process creation with event id 1 and the process.command\_line as any of the below:
+
+   ```c
+   cmd.exe /Q /c powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q" 1> \Windows\Temp\* 2>&1
+   powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\Windows\Temp\*' q q"
+   "C:\Windows\system32\ntdsutil.exe" "ac i ntds" ifm "create full C:\Windows\Temp\*" q q
+   cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\* 1> \Windows\Temp\* 2>&1
+   ```
+
 4. **Rule Name:** Netexec Ntds VSS Option - Command Line Detection
-    
-    **Detection Query:**
-    
-    `event.code:"1" and (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C: ^> C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C:*" or message:"*vssadmin  list shadows /for=C:*" or message:"*C:\\Windows\\system32\\vssvc.exe*" or (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*" and message:"*C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*") or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*")`
-    
-    **Rule Description:** This alert is the result of Netexec’s VSS option to perform a DCSync attack by looking for process creation with event id 1 and the process.command_line as any of the below:
-    
-    ```c
-    C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
-    C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*.tmp 
-    ```
-    
+
+   **Detection Query:**
+
+   ```elasticsearch
+   event.code:"1" and (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C: ^> C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C vssadmin list shadows /for=C:*" or message:"*vssadmin  list shadows /for=C:*" or message:"*C:\\Windows\\system32\\vssvc.exe*" or (message:"*C:\\Windows\\system32\\cmd.exe /Q /c echo C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*" and message:"*C:\\Windows\\Temp\\__output > C:\\Windows\\TEMP\\execute.bat & C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat & del C:\\Windows\\TEMP\\execute.bat*") or message:"*C:\\Windows\\system32\\cmd.exe /Q /c C:\\Windows\\TEMP\\execute.bat*" or message:"*C:\\Windows\\system32\\cmd.exe /C copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy23\\Windows\\NTDS\\ntds.dit C:\\Windows\\Temp\\*")
+   ```
+
+   **Rule Description:** This alert is the result of Netexec’s VSS option to perform a DCSync attack by looking for process creation with event id 1 and the process.command\_line as any of the below:
+
+   ```c
+   C:\Windows\system32\cmd.exe /Q /c echo C:\Windows\system32\cmd.exe /C vssadmin list shadows /for=C: ^> C:\Windows\Temp\__output > C:\Windows\TEMP\execute.bat & C:\Windows\system32\cmd.exe /Q /c C:\Windows\TEMP\execute.bat & del C:\Windows\TEMP\execute.bat
+   C:\Windows\system32\cmd.exe  /C copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy23\Windows\NTDS\ntds.dit C:\Windows\Temp\*.tmp 
+   ```
+
 5. **Rule Name:** Netexec Ntds VSS Option - Event Log Detection
-    
-    **Detection Query:**
-    
-    `(event.code: 4904 OR event.code: 4905) AND process.executable: "C:\\Windows\\System32\\VSSVC.exe"`
-    
-    **Rule Description:** This is another alert as a result of Netexec’s VSS option to perform a DCSync attack by looking for generated event logs ID `4904` and `4905` with process executable name of `C:\Windows\System32\VSSVC.exe`
 
-- Detects shadow copy creation via `VSSVC.exe`
+   **Detection Query:**
 
----
+   ```elasticsearch
+   (event.code: 4904 OR event.code: 4905) AND process.executable: "C:\\Windows\\System32\\VSSVC.exe"
+   ```
+
+   **Rule Description:** This is another alert as a result of Netexec’s VSS option to perform a DCSync attack by looking for generated event logs ID `4904` and `4905` with process executable name of `C:\Windows\System32\VSSVC.exe`
+
+   * Detects shadow copy creation via `VSSVC.exe`
