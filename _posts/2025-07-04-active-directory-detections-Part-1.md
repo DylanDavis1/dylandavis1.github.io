@@ -428,16 +428,16 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
 
   Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
   Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
-  `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ **DS-Replication-Get-Changes**
+  `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` — _which is_ *DS-Replication-Get-Changes*
   
 ![image 4](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%203.png)
 ![image 5](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%204.png)
 
-  Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is **DS-Replication-Get-Changes-In-Filtered-Set.**
+  Log 3 will look very different, however. It will not have a GUID beginning with `1131f6a` and instead will have `89e95b76-444d-4c62-991a-0facbeda640c` which is *DS-Replication-Get-Changes-In-Filtered-Set.*
 
 ![image 6](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%205.png)
 
-  Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
+  Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is *DS-Replication-Get-Changes-All*.
   
 ![image 7](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%206.png)
 
@@ -456,8 +456,10 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 1. **Drsuapi to sync a single user**
     
     The command to DCSync a single user with Netexec over the Drsuapu protocol is:
-    
-    `nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt`
+
+    ```c
+    nxc smb 192.168.108.139 -u Administrator -d testlab.local -p 'P@ssw0rd' --ntds --user krbtgt
+    ```
     
     ![image 9](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%208.png)
     
@@ -473,12 +475,14 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     Again we can look for non domain controller machine accounts too, just like the Mimikatz detection.
     
-2. **ntdsutil.exe**
+1. **ntdsutil.exe**
     
     Netexec can perform a DCSync by using the LOLBIN (living off the land binary) ntdsutil.exe. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
-    
-    `nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil`
-    
+
+    ```c
+    nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil
+    ```
+
     ![image 13](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2012.png)
     
     ![image 14](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2013.png)
@@ -496,7 +500,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     ![image 15](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2014.png)
     
-    This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the ‘172963876’ directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
+    This file then gets deleted with the rmdir command, and another file gets created in its place. Additionally, the `172963876` directory contains the ntds.dit and the SECURITY and SYSTEM registry keys. This entire directory will be deleted shortly after.
     
     ![image 16](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2015.png)
     
@@ -504,15 +508,15 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
     ![image 17](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2016.png)
     
-    Lastly, there will be lots of event id 4799 logs generated on the domain controller. (182 from my testing to be exact) with the process executable of either C:\Windows\System32\ntdsutil.exe or C:\Windows\System32\VSSVC.exe.
+    Lastly, there will be lots of event id `4799` logs generated on the domain controller. With the process executable of either `C:\Windows\System32\ntdsutil.exe` or `C:\Windows\System32\VSSVC.exe`.
     
     ![image 18](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2017.png)
     
     We can build another alert for this.
     
-3. **Volume Shadow Copy Service (VSS)**
+2. **Volume Shadow Copy Service (VSS)**
     
-    Lastly Netexec has an option to dump ntds.dit with the volume shadow copy service (VSS) using the following command:
+    Lastly Netexec has an option to dump `ntds.dit` with the volume shadow copy service (VSS) using the following command:
     
     ```c
    nxc smb 192.168.108.139 -u 'Administrator' -d testlab.local -p 'P@ssw0rd' --ntds vss`
@@ -615,6 +619,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
 ## Detecting Pass-The-Hash
 
 We dumped LSASS with Mimikatz using 
+
 ```c
 sekurlsa::logonPasswords full`
 ```
@@ -628,7 +633,8 @@ sekurlsa::logonPasswords full`
     ```c
     sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
     ```
-    
+
+  
 - We then were able to get a root shell on the Domain Controller authenticating as the Administrator account, as shown by the command prompt `whoami /user` command.
     
     ![image 24](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2023.png)
@@ -660,7 +666,7 @@ This **Sysmon Event ID 1** log shows the **cmd.exe** process running **Mimikatz*
     ![image 27](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2026.png)
     
 
-1. PowerShell Execution
+**1. PowerShell Execution**
 
 - **PowerShell.exe** was executed under the **Administrator** account.
 
