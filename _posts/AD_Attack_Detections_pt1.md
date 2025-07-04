@@ -28,6 +28,7 @@ This is part one of a multi-part detection engineering blog series that covers a
 Unlike brute force attacks, password spraying involves trying a small number of commonly used passwords against multiple user accounts. We chose Kerbrute as the tool for this attack because it generates distinct event logs that we can use to detect the activity.
 
 **Tool:** [Kerbrute](https://github.com/ropnop/kerbrute)
+
 **Command:**
 ```bash
 ./kerbrute passwordspray usernames.txt "bP@ssw0rd" -d testlab.local --dc dc.testlab.local
