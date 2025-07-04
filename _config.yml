@@ -23,7 +23,7 @@ navbar-links:
 # --- Logo --- #
 ################
 
-avatar: "assets/profile.jpg"
+avatar: "assets/img/avatar-icon.png"
 round-avatar: true
 
 #####################################
