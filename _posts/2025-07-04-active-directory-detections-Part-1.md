@@ -425,7 +425,7 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
   
 ![image 3](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%202.png)
 
-1. **GUIDs**
+2. **GUIDs**
 
   Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
   Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
@@ -478,7 +478,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     
 1. **ntdsutil.exe**
     
-    Netexec can perform a DCSync by using the LOLBIN (living off the land binary) ntdsutil.exe. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
+    Netexec can perform a DCSync by using the LOLBIN (living off the land binary) `ntdsutil.exe`. ntdsutil.exe is not a common utility run on the environment. It does not blend in with day to day activities.
 
     ```c
     nxc smb 192.168.1.100 -u UserName -p 'PASSWORDHERE' -M ntdsutil
@@ -497,7 +497,7 @@ There are 3 methods of performing a dcsync with netexec. 1. Using drsuapi to syn
     cmd.exe /Q /c rmdir /s /q C:\Windows\Temp\172963876 1> \Windows\Temp\vofITR 2>&1
     ```
     
-    The first command executes the second which executes the third. The third created a directory called ‘172963876’ in C:\Windows\Temp and standard out was sent to a random file called vofITR with the following content below.
+    The first command executes the second which executes the third. The third created a directory called `172963876` in `C:\Windows\Temp` and standard out was sent to a random file called `vofITR` with the following content below.
     
     ![image 15](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2014.png)
     
