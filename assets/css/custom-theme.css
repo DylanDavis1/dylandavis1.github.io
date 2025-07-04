@@ -47,3 +47,18 @@ img {
   border-radius: 6px; /* optional: adds slight rounding */
   padding: 2px;       /* optional: space between image and border */
 }
+
+/* Border around code blocks */
+.highlight, pre {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  padding: 1em;
+  overflow-x: auto;
+}
+
+code {
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  font-size: 0.95em;
+}
+
