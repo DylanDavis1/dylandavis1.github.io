@@ -28,3 +28,14 @@ footer a {
 footer a:hover {
   color: {{ site.footer-hover-col }};
 }
+.post-preview {
+  background-color: #2f2f2f;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.post-preview:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
