@@ -424,7 +424,7 @@ When Mimikatz is used to perform a DCSync, it generates **four** `4662` logs ins
   
 ![image 3](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%202.png)
 
-1. **GUIDs**
+2. **GUIDs**
 
   Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
   Logs 1 & 2 will look the same and have the same GUIDs. It will have a GUID of:
