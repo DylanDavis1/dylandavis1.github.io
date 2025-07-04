@@ -612,9 +612,9 @@ We dumped LSASS with Mimikatz using `sekurlsa::logonPasswords full`
     ![image 23](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2022.png)
     
 - To perform the PTH attack, we ran the command
-    
-    `sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
-    
+    ```c
+    sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
+    ```
 - We then were able to get a root shell on the Domain Controller authenticating as the Administrator account, as shown by the command prompt `whoami /user` command.
     
     ![image 24](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2023.png)
@@ -664,7 +664,7 @@ This **Sysmon Event ID 1** log shows the **cmd.exe** process running **Mimikatz*
 
 **Detection Query:**
 
-```
+```elasticsearch
 winlog.event_id: ("4624" and "4672") and winlog.event_data.LogonProcessName: "seclogo"
 ```
 
