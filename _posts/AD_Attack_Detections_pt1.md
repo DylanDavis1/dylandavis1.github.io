@@ -395,7 +395,7 @@ DCSync is a powerful technique which is used to replicate a domain controllers b
 
 ### Detecting Mimikatz's DCSync
 
-**Tool:** Mimikatz[Mimikatz](https://github.com/gentilkiwi/mimikatz)
+**Tool:** [Mimikatz](https://github.com/gentilkiwi/mimikatz)
 
 **Command:**
 
@@ -419,8 +419,6 @@ If we were a Domain Administrator user when we run a DCSync attack, we can see t
 Now you could elevate to SYSTEM as a domain controller and then run a DCSync attack which would make the account name look normal. So this is why we also flag the **GUIDs** as shown below.
 - insert picture
 
----
-
 ### 2. **GUIDs**
 
 Next is flagging the **GUIDs**. As mentioned before, Mimikatz will generate 4 logs.  
@@ -435,7 +433,6 @@ Log 3 will look very different, however. It will not have a GUID beginning with 
 Log 4 will look very similar to Logs 1 & 2, but it will have a slightly different GUID. It will have a GUID of `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` which is **DS-Replication-Get-Changes-All**.
 - insert pic
 
----
 
 ### **Bonus Notes**
 
