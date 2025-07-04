@@ -12,7 +12,11 @@ site-css:
   - /assets/css/custom-theme.css
 
 title: Dylan's Blog
+header:
+  title: Dylan's Blog"
 author: Dylan Davis
+subtitle: "Red team techniques. Blue team detections."
+
 
 ###############################################
 # --- List of links in the navigation bar --- #
