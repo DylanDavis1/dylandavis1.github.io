@@ -3,6 +3,7 @@ layout: post
 title: "Active Directory Attack Detections Part 1"
 date: 2025-07-04
 categories: detections ad attacks
+permalink: /detect-ad-attacks-pt1/
 share-img: /assets/img/AD_Attack_Detections_pt/1_kk22SDXEt6p-mQCSlOYpcg-3533953581.png
 tags: [active-directory, detection engineering, threat-hunting, blue-team]
 ---
