@@ -61,3 +61,4 @@ code {
   font-size: 0.95em;
 }
 
+.tiny-gap li + li { margin-top: .25rem; } /* ~4px */
