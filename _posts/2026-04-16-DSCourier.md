@@ -167,6 +167,8 @@ The result is a set of DLLs that allow any .NET application to invoke the WinGet
 
 ## What the Process Tree Looks Like
 
+![DSCourier](/assets/img/DSCourier/Image2.png)
+
 **Traditional winget.exe Approach:**
 
 ```
@@ -185,8 +187,7 @@ svchost.exe (DCOMLaunch)
 
 The process tree of the latter matches what legitimate WinGet COM consumers produce, all while producing no `winget.exe`.
 
-![EDR process tree showing DSCourier COM approach with only Microsoft-signed binaries](/assets/img/DSCourier/Image2.png)
-
+![EDR Process Tree](/assets/img/DSCourier/Image4.png)
 ---
 
 ## Bypassing EDR Solutions
