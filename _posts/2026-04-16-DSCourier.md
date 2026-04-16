@@ -2,6 +2,7 @@
 layout: post
 title: "DSCourier: Weaponizing DSC via WinGet COM API for EDR Evasive Execution"
 date: 2026-04-16
+permalink: /DSCourier/
 categories: research offensive-security windows
 tags: [winget, dsc, evasion, redteam]
 image: /assets/img/DSCourier/DSCourier.png
