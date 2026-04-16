@@ -4,7 +4,7 @@ title: "DSCourier: Weaponizing DSC via WinGet COM API for EDR Evasive Execution"
 date: 2026-04-16
 categories: research offensive-security windows
 tags: [winget, dsc, evasion, redteam]
-image: https://dylandavis1.github.io/assets/img/DSCourier/DSCourier.png
+image: /assets/img/DSCourier/DSCourier.png
 ---
 
 ## Table of Contents
@@ -69,7 +69,7 @@ This creates a potential detection blind spot.
 process.name: "winget.exe" and process.command_line: (*configure* or *configuration* or *dsc*)
 ```
 
-![winget detection](https://dylandavis1.github.io/assets/img/DSCourier/image1.png)
+![winget detection](/assets/img/DSCourier/Image1.png)
 
 ### Parent Process Visibility
 
@@ -152,7 +152,7 @@ svchost.exe (DCOMLaunch)
        └── ConfigurationRemotingServer.exe
 ```
 
-![process tree](https://dylandavis1.github.io/assets/img/DSCourier/image2.png)
+![process tree](/assets/img/DSCourier/Image2.png)
 
 ---
 
@@ -165,7 +165,7 @@ Because the COM-based approach avoids spawning `winget.exe` and executes entirel
 DSCourier was tested against a live CrowdStrike Falcon deployment. The payload executed successfully without triggering any prevention or detection. Falcon's process-based telemetry did not flag `WindowsPackageManagerServer.exe` or `ConfigurationRemotingServer.exe` as malicious, and the reverse shell was able to call back.
 
 <video controls width="100%">
-  <source src="https://dylandavis1.github.io/assets/vidoes/CrowdStrike_Bypass.mp4" type="video/mp4">
+  <source src="/assets/videos/CrowdStrike_Bypass.mp4" type="video/mp4">
 </video>
 
 ### Microsoft Defender for Endpoint (MDE)
@@ -191,7 +191,7 @@ process.parent.name:("ConfigurationRemotingServer.exe" or "WindowsPackageManager
 process.name:("powershell.exe" or "cmd.exe" or "wscript.exe" or "cscript.exe")
 ```
 
-![detection](https://dylandavis1.github.io/assets/img/DSCourier/image3.png)
+![detection](/assets/img/DSCourier/image3.png)
 
 ---
 
@@ -211,4 +211,4 @@ Detection must shift from process-based monitoring to behavior-based monitoring.
 
 ## Source Code
 
-https://github.com/DylanDavis1/DSCourier
+[DSCourier on GitHub](https://github.com/DylanDavis1/DSCourier)
