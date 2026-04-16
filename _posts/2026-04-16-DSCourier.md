@@ -38,15 +38,21 @@ The abuse of Windows Package Manager (WinGet) as a living-off-the-land binary is
 
 This post takes that concept further. Instead of calling `winget.exe`, we invoke the WinGet Configuration engine directly through its **COM API**, completely removing the CLI process from the execution chain. The result is arbitrary code execution inside a Microsoft-signed process with no `winget.exe`, no `powershell.exe`, and no `cmd.exe` in the process tree.
 
+---
+
 ## What is WinGet?
 
 [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/) is Microsoft's official package manager for Windows. Think of apt on Debian or brew on MacOS, it lets you search for, install, update, and remove software directly from the terminal without navigating download pages or running a GUI installer.
 
 What makes WinGet relevant here is its availability. It ships natively with modern versions of Windows 10, 11 and Windows Server 2025, making it a candidate for living-off-the-land abuse. Many administrators know it for installing software, but WinGet also includes a **configure** subcommand that can apply machine configurations from YAML files (including executing PowerShell). That capability is where things get a bit interesting.
 
+---
+
 ## WinGet as a PowerShell Execution Proxy
 
 WinGet's configure command accepts YAML files that define DSC resources. Among the available resources, **PSDscResources/Script** allows arbitrary PowerShell execution. The PowerShell in this case does not run through `powershell.exe` or `pwsh.exe`, but instead runs through **ConfigurationRemotingServer.exe**, which is a Microsoft-signed binary in the WinGet package directory. This can alone make WinGet a proxy for PowerShell execution that can potentially bypass monitoring focused on traditional PowerShell host processes.
+
+---
 
 ## The Limitations of Using winget.exe Directly
 
@@ -63,6 +69,8 @@ process.name: "winget.exe" and process.command_line: (*configure* or *configurat
 **Parent-child process relationships provide forensic context:** When `winget configure` is invoked from a shell, `cmd.exe` or `powershell.exe` appears as the parent of `winget.exe` in the process tree. While this can be legitimate (a system administrator running a configuration manually), it gives defenders a full chain to investigate. They can see who initiated the command, from which terminal session, and what YAML file was referenced. The point here isn't that the process chain is inherently malicious, but that it's fully observable and traceable back to the source.
 
 So while downstream execution inside `ConfigurationRemotingServer.exe` has detection blind spots, the initiation point through `winget.exe` is entirely visible to any organization with basic process monitoring.
+
+---
 
 ## Building YAML Payloads
 
@@ -114,6 +122,8 @@ properties:
 - **`SetScript`**: The PowerShell that actually executes when the configuration is applied. Whatever code is here runs inside `ConfigurationRemotingServer.exe`.
 - **`TestScript`**: PowerShell that simply returns `$true` or `$false`. DSC calls this first to check if the desired state is already met. If `$true`, the SetScript is skipped. Returning `$false` however forces SetScript to execute every time.
 
+---
+
 ## Removing winget.exe from the Equation
 
 Most existing detection guidance for WinGet abuse focuses on monitoring `winget.exe` process creation. But what if `winget.exe` never runs?
@@ -124,6 +134,8 @@ WinGet exposes its configuration functionality through a **WinRT (Windows Runtim
 - ConfigurationStaticFunctions (The DSC configuration engine)
 
 Both activate without administrative privileges and both spawn `WindowsPackageManagerServer.exe` (a Microsoft-signed binary) as the COM server host. No additional software installation is required as these are present on any system with WinGet installed.
+
+---
 
 ## How the COM API Technique Works
 
@@ -137,6 +149,8 @@ WinGet ships two Windows Metadata (.winmd) files, `Microsoft.Management.Configur
 
 The DSC engine spawns `ConfigurationRemotingServer.exe` to execute resources, but the entry point is no longer `winget.exe`. The calling application makes COM calls to Microsoft-signed WinRT services.
 
+---
+
 ## The Interop Layer
 
 Accessing the WinGet Configuration COM API from .NET requires an interop layer that projects the WinRT types into managed code. We built this by extending [marticliment's WinGet-API-from-CSharp](https://github.com/marticliment/WinGet-API-from-CSharp) project, which provides COM interop for WinGet's package management API. We added Configuration API support by:
@@ -146,6 +160,8 @@ Accessing the WinGet Configuration COM API from .NET requires an interop layer t
 3. Adding a method to create `ConfigurationStaticFunctions` instances
 
 The result is a set of DLLs that allow any .NET application to invoke the WinGet Configuration API through COM. All of the supporting files are legitimate Microsoft components. Only our executable `DSCourier.exe` is custom.
+
+---
 
 ## What the Process Tree Looks Like
 
@@ -209,6 +225,8 @@ process.name:("powershell.exe" or "pwsh.exe" or "cmd.exe" or "wscript.exe" or "c
 
 *Note: These logs were generated from running shell commands from the above reverse shell YAML resource. `conhost.exe` is attached by Windows whenever a console application is launched, so seeing it as a child of `ConfigurationRemotingServer.exe` is itself an indicator that a shell was spawned during DSC execution.*
 
+---
+
 ## Preventions
 
 Disable WinGet entirely: Setting 'Enable App Installer' to Disabled blocks all functional WinGet operations.
@@ -221,11 +239,15 @@ Disable WinGet configuration: This disables `winget configure` and the underlyin
 
 Constrained Language Mode (CLM), WDAC, AppLocker, etc.
 
+---
+
 ## Conclusion
 
 By invoking the DSC engine through COM rather than the CLI, we are able to execute arbitrary code inside of a Microsoft-signed process with no `winget.exe` artifacts.
 
 One of the key takeaways is that this demonstrates that detection strategies focused solely on `winget.exe` are insufficient. Defenders must also shift visibility toward the behavior of `WindowsPackageManagerServer.exe` and `ConfigurationRemotingServer.exe`. Ultimately, this technique highlights how trusted Windows management components can be used in ways that blend in with legitimate system activity.
+
+---
 
 ## Source Code
 
